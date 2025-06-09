@@ -25,7 +25,7 @@ Cursor Rulesは、プロジェクト間で共有可能なAIアシスタントの
   ```
   Always respond in 日本語. Comments in code must be 日本語 too.
 
-  「コミットして」と指示があったら、`cat ~/repo/prompts/.cursor/rules/commit.mdc`を実行して内容を理解してそのドキュメントどおりに作業を進めてください
+  「コミットして」または「プルリクにして」と指示があったら、対応するルールファイル（`~/repo/prompts/.cursor/rules/{commit,create-pull-request}.mdc`）を実行して内容を理解し、そのドキュメントどおりに作業を進めてください
   ```
 - こうすることで、User Rulesで「どのプロジェクトでもこのリポジトリのルールを参照する」運用が可能になります。
 
@@ -37,6 +37,7 @@ Cursor Rulesは、プロジェクト間で共有可能なAIアシスタントの
 現在利用可能なルール：
 
 - `commit.mdc`: コミットメッセージの作成と実行に関するルール
+- `create-pull-request.mdc`: プルリクエストの作成プロセスを標準化するためのルール
 
 今後、以下のようなルールが追加される予定です：
 
