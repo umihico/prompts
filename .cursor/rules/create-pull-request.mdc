@@ -17,11 +17,7 @@ alwaysApply: false
    git diff main..HEAD | cat
    ```
 
-2. プルリクエストの説明文を一時ファイルに作成
-   ```bash
-   PR_DESCRIPTION_FILE="temp_pull_request_body.md"
-   touch "$PR_DESCRIPTION_FILE"
-   ```
+2. プルリクエストの説明文を一時ファイル`temp_pull_request_body.md`に作成
 
 3. プルリクエストの説明文を記述
    - 変更の目的と背景
@@ -37,14 +33,10 @@ alwaysApply: false
    # プルリクエストの作成
    gh pr create \
      --title "タイトル" \
-     --body-file "$PR_DESCRIPTION_FILE"
+     --body-file "temp_pull_request_body.md"
    ```
 
-5. 一時ファイルの削除
-   ```bash
-   # 一時ファイルの削除
-   rm "$PR_DESCRIPTION_FILE"
-   ```
+5. 一時ファイル`temp_pull_request_body.md`の削除
 
 ## プルリクエストのタイトル規則
 
