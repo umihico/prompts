@@ -13,8 +13,9 @@ alwaysApply: false
 
    ```bash
    git status | cat
-   git log --oneline | cat
-   git diff main..HEAD | cat
+   git log --oneline -n 100 | cat
+   DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+   git diff $DEFAULT_BRANCH..HEAD | cat
    ```
 
 2. プルリクエストの説明文を一時ファイル`temp_pull_request_body.md`に作成
