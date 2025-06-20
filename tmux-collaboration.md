@@ -244,6 +244,16 @@ tmux capture-pane -t 0 -p | grep -E "(error|failed|exception)"
 
 # 完了状況の確認
 tmux capture-pane -t 0 -p | grep -E "(completed|finished|done|success)"
+
+# 待機を伴う監視（API制限エラー等の場合）
+sleep 5 && tmux capture-pane -t 0 -p | tail -n 20   # 短時間待機
+sleep 10 && tmux capture-pane -t 0 -p | tail -n 20  # 中程度待機
+sleep 15 && tmux capture-pane -t 0 -p | tail -n 20  # 長時間待機
+
+# 状況に応じた機動的な待機時間調整
+# - API制限エラー: 10-15秒
+# - 通常の処理待ち: 3-5秒
+# - 長時間の作業: 15-30秒
 ```
 
 #### 5. 実際の許可フロー例
@@ -254,13 +264,13 @@ tmux capture-pane -t 0 -p | tail -10
 
 # 2. コマンド内容を確認し判断
 # 安全なコマンドの場合
-tmux send-keys -t 0 "1" Enter  # 基本の許可
+tmux send-keys -t 0 Enter  # 基本の許可（デフォルト選択）
 
 # 安全で繰り返し実行されるコマンドの場合
-tmux send-keys -t 0 "2" Enter  # 同様コマンドの自動許可
+tmux send-keys -t 0 Down Enter  # 同様コマンドの自動許可
 
 # 危険なコマンドの場合
-tmux send-keys -t 0 "3" Enter  # 拒否して指示
+tmux send-keys -t 0 Down Down Enter  # 拒否して指示
 tmux send-keys -t 0 "理由: <具体的な理由>。代替案: <安全な方法>" Enter
 
 # 3. 作業継続を監視
@@ -287,11 +297,18 @@ Claude Codeの「Yes, and don't ask again for similar commands」オプション
 
 ##### 自動許可の設定方法
 ```bash
-# 安全で繰り返されるコマンドに対して
-tmux send-keys -t 0 "2" Enter  # 「Yes, and don't ask again...」を選択
+# 基本的な許可（1回のみ）
+tmux send-keys -t 0 Enter  # デフォルト選択（1. Yes）
+
+# 自動許可設定（繰り返しコマンド用）
+tmux send-keys -t 0 Down Enter  # 2番目の選択肢を選択
+
+# 拒否の場合
+tmux send-keys -t 0 Down Down Enter  # 3番目の選択肢を選択
 
 # 実際の運用例
 # git addの初回許可時に自動化設定
+tmux send-keys -t 0 Down Enter  # 「Yes, and don't ask again...」を選択
 # → 以降のgit addは自動許可される
 # → 監督者の作業負荷軽減
 ```
@@ -304,6 +321,19 @@ tmux send-keys -t 0 "2" Enter  # 「Yes, and don't ask again...」を選択
 - **基本はペイン番号のみ指定**: 同一セッション内ではペイン番号（0, 1, 2...）のみで操作
 - **複数セッション環境での注意**: 他のtmuxセッションが存在する場合のみセッション名を明示
 
+#### 監督者の自動起動システム
+監督者自身がハングしないよう、以下のワンライナーで繰り返し起動される仕組みを使用：
+
+```bash
+claude -p "監督者として作業中のpaneがハングしないようにアシストしてください" --allowedTools "Bash(tmux:*)"
+```
+
+**システムの特徴**:
+- **自動復旧**: 監督者プロセスがハング時に自動で新しいインスタンスを起動
+- **tmux専用ツール**: tmux関連のBashコマンドのみ許可で安全性を確保
+- **継続監視**: 作業者の状況を継続的に監視し、許可申請に迅速対応
+- **セッション維持**: tmuxセッション内で動作するため、接続が切れても復旧可能
+
 #### 監督者の心構え
 - **作業内容の詳細把握は不要**: ペイン出力からの類推で十分
 - **迅速な許可判断**: 作業者の生産性を阻害しないよう素早く判断
@@ -315,3 +345,5 @@ tmux send-keys -t 0 "2" Enter  # 「Yes, and don't ask again...」を選択
 - 入力混在を避けるため、一度の許可は明確に区切る
 - 長時間の監視では定期的にペイン状況を確認
 - 作業者がブロックされている場合は迅速に対応
+- **待機時間の機動的調整**: API制限エラーや処理状況に応じてsleep秒数を柔軟に変更
+- 連続監視時は適度な間隔（3-5秒）でポーリング
