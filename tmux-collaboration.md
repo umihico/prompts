@@ -254,14 +254,46 @@ tmux capture-pane -t 0 -p | tail -10
 
 # 2. コマンド内容を確認し判断
 # 安全なコマンドの場合
-tmux send-keys -t 0 "yes" Enter
+tmux send-keys -t 0 "1" Enter  # 基本の許可
+
+# 安全で繰り返し実行されるコマンドの場合
+tmux send-keys -t 0 "2" Enter  # 同様コマンドの自動許可
 
 # 危険なコマンドの場合
-tmux send-keys -t 0 "no" Enter
+tmux send-keys -t 0 "3" Enter  # 拒否して指示
 tmux send-keys -t 0 "理由: <具体的な理由>。代替案: <安全な方法>" Enter
 
 # 3. 作業継続を監視
 tmux capture-pane -t 0 -p | tail -5
+```
+
+#### 6. 自動許可機能の活用
+
+##### 推奨される自動許可パターン
+Claude Codeの「Yes, and don't ask again for similar commands」オプションは以下の場合に推奨：
+
+**積極的に自動許可すべきコマンド**:
+- **基本的なGit操作**: `git add`, `git commit`, `git push`, `git status`, `git diff`
+- **ファイル読み書き**: 同一プロジェクト内でのファイル編集・作成
+- **開発ツール**: `npm install`, `yarn add`, `pip install`（package.json等で指定済み）
+- **テスト実行**: `pytest`, `jest`, `cargo test`等の定期実行
+- **フォーマッター**: `prettier`, `black`, `rustfmt`等
+
+**自動許可を避けるべきコマンド**:
+- **システムレベル操作**: `sudo`, `chmod`, `rm -rf`等
+- **外部通信**: `curl`, `wget`（URLが毎回異なる）
+- **環境変数設定**: `export`（値が毎回異なる）
+- **スクリプト実行**: 内容が動的に変わるスクリプト
+
+##### 自動許可の設定方法
+```bash
+# 安全で繰り返されるコマンドに対して
+tmux send-keys -t 0 "2" Enter  # 「Yes, and don't ask again...」を選択
+
+# 実際の運用例
+# git addの初回許可時に自動化設定
+# → 以降のgit addは自動許可される
+# → 監督者の作業負荷軽減
 ```
 
 ### 監督者運用の注意点
@@ -277,6 +309,7 @@ tmux capture-pane -t 0 -p | tail -5
 - **迅速な許可判断**: 作業者の生産性を阻害しないよう素早く判断
 - **セキュリティ最優先**: 疑わしい場合は拒否し、代替案を提示
 - **積極的な許可**: 通常の開発作業は積極的に許可
+- **効率的な自動化**: 安全で繰り返されるコマンドは自動許可を活用
 
 #### 技術的な注意点
 - 入力混在を避けるため、一度の許可は明確に区切る
