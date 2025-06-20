@@ -84,12 +84,6 @@ tmux send-keys -t 1 C-l  # Ctrl+Lを送信（画面クリア）
 tmux capture-pane -t 1 -p | tail -5  # 最後の5行を確認
 tmux send-keys -t 1 'cd /path/to/dir' Enter  # ディレクトリ移動
 
-# 複数ペインに同じコマンドを送信
-for pane in 1 2 3; do
-    tmux send-keys -t $pane 'npm install' Enter
-done
-```
-
 ## 補足情報
 
 ### ペイン一覧確認
@@ -119,8 +113,8 @@ tmux send-keys -t 0 "指示内容" Enter  # ペイン0（作業者）への指�
 tmux send-keys -t 1 "指示内容" Enter  # ペイン1（作業者）への指示
 
 # 作業者の状況確認（ペイン番号のみ指定）
-tmux capture-pane -t 0 -p | tail -20  # ペイン0の確認
-tmux capture-pane -t 1 -p | tail -20  # ペイン1の確認
+tmux capture-pane -t 0 -p | tail -30  # ペイン0の確認
+tmux capture-pane -t 1 -p | tail -30  # ペイン1の確認
 ```
 
 ### 複数セッション環境での混在回避
@@ -161,17 +155,11 @@ tmux list-sessions
 #### 1. 基本的な監視パターン（同一セッション内）
 ```bash
 # 1. 作業者の状態確認（ペイン番号のみ）
-tmux capture-pane -t 0 -p | tail -n 20
-
-# 2. 許可申請の確認
-tmux capture-pane -t 0 -p | grep -E "(permission|approve|allow|execute)"
-
-# 3. 継続的な進捗監視
-tmux capture-pane -t 0 -p | tail -n 10
+tmux capture-pane -t 0 -p | tail -n 30
 
 # 複数セッション環境での安全版（必要な場合のみ）
 SESSION=$(tmux display-message -p '#S')
-tmux capture-pane -t $SESSION:0 -p | tail -n 20
+tmux capture-pane -t $SESSION:0 -p | tail -n 30
 ```
 
 #### 2. コマンド実行許可の判断と送信
@@ -230,25 +218,13 @@ tmux send-keys -t 0 "環境変数やファイルから読み込む方式に変�
 #### 4. 監督者の効率的な監視方法
 
 ```bash
-# 許可申請の検出
-tmux capture-pane -t 0 -p | grep -E "(approve|permission|allow|confirm|proceed)"
-
-# 危険なコマンドの検出
-tmux capture-pane -t 0 -p | grep -E "(sudo|rm -rf|curl|wget|export.*=.*key)"
-
 # 作業進捗の確認
-tmux capture-pane -t 0 -p | tail -n 15
-
-# エラー状況の確認
-tmux capture-pane -t 0 -p | grep -E "(error|failed|exception)"
-
-# 完了状況の確認
-tmux capture-pane -t 0 -p | grep -E "(completed|finished|done|success)"
+tmux capture-pane -t 0 -p | tail -n 30
 
 # 待機を伴う監視（API制限エラー等の場合）
-sleep 5 && tmux capture-pane -t 0 -p | tail -n 20   # 短時間待機
-sleep 10 && tmux capture-pane -t 0 -p | tail -n 20  # 中程度待機
-sleep 15 && tmux capture-pane -t 0 -p | tail -n 20  # 長時間待機
+sleep 10 && tmux capture-pane -t 0 -p | tail -n 30   # 短時間待機
+sleep 20 && tmux capture-pane -t 0 -p | tail -n 30  # 中程度待機
+sleep 30 && tmux capture-pane -t 0 -p | tail -n 30  # 長時間待機
 
 # 状況に応じた機動的な待機時間調整
 # - API制限エラー: 10-15秒
@@ -259,8 +235,8 @@ sleep 15 && tmux capture-pane -t 0 -p | tail -n 20  # 長時間待機
 #### 5. 実際の許可フロー例
 
 ```bash
-# 1. 作業者の許可申請を検出
-tmux capture-pane -t 0 -p | tail -10
+# 1. 作業者の状況確認
+tmux capture-pane -t 0 -p | tail -n 30
 
 # 2. コマンド内容を確認し判断
 # 安全なコマンドの場合
@@ -274,7 +250,7 @@ tmux send-keys -t 0 Down Down Enter  # 拒否して指示
 tmux send-keys -t 0 "理由: <具体的な理由>。代替案: <安全な方法>" Enter
 
 # 3. 作業継続を監視
-tmux capture-pane -t 0 -p | tail -5
+sleep 20 && tmux capture-pane -t 0 -p | tail -n 30
 ```
 
 #### 6. 自動許可機能の活用
@@ -325,7 +301,7 @@ tmux send-keys -t 0 Down Enter  # 「Yes, and don't ask again...」を選択
 監督者自身がハングしないよう、以下のワンライナーで繰り返し起動される仕組みを使用：
 
 ```bash
-claude -p "監督者として作業中のpaneがハングしないようにアシストしてください" --allowedTools "Bash(tmux:*)"
+claude "監督者として作業中のpaneがハングしないようにアシストしてください" --allowedTools "Bash(tmux:*),Bash(sleep),Bash(tail)"
 ```
 
 **システムの特徴**:
