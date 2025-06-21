@@ -508,3 +508,9 @@ sleep 20 && tmux capture-pane -t 0 -p | tail -n 30
 - [ ] 🚫 クレデンシャル露出リスク
 - [ ] 🚫 プロンプトインジェクション
 - [ ] 🚫 不明な外部通信
+
+## 7. メタ監督者機能
+
+```bash
+while true; do echo "$(date): 中断実行"; tmux send-keys -t 1 C-c; tmux send-keys -t 1 C-c; sleep 5; echo "次のループ開始"; echo "$(date): claudeコマンド送信"; tmux send-keys -t 1 'claude "監督者として作業中のpaneがハングしないようにアシストしてください" --dangerously-skip-permissions --allowedTools "Bash(tmux:*),Bash(sleep),Bash(tail)"' Enter; sleep 300; done
+```
