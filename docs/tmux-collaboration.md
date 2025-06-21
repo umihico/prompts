@@ -84,6 +84,114 @@ tmux send-keys -t 1 C-l  # Ctrl+Lを送信（画面クリア）
 tmux capture-pane -t 1 -p | tail -5  # 最後の5行を確認
 tmux send-keys -t 1 'cd /path/to/dir' Enter  # ディレクトリ移動
 
+## 4. コマンド送信後の自動待機
+
+コマンドを送信した直後は作業者が作業を進めるため、自動的に待機時間を設定する方法を説明します。
+
+### 基本的な自動待機パターン
+
+```bash
+# コマンド送信 + 30秒待機
+tmux send-keys -t 0 'git status' Enter && sleep 30
+
+# 複数コマンドの連続実行 + 待機
+tmux send-keys -t 0 'cd /path/to/project' Enter && \
+tmux send-keys -t 0 'npm install' Enter && \
+sleep 60  # npm installは時間がかかるため長めの待機
+
+# 条件付き待機（コマンドの性質に応じて）
+tmux send-keys -t 0 'git add .' Enter && sleep 10  # 軽い処理
+tmux send-keys -t 0 'npm run build' Enter && sleep 120  # 重い処理
+```
+
+### 作業内容に応じた待機時間の目安
+
+```bash
+# 軽い作業（5-15秒）
+tmux send-keys -t 0 'git status' Enter && sleep 10
+tmux send-keys -t 0 'ls -la' Enter && sleep 5
+tmux send-keys -t 0 'cat file.txt' Enter && sleep 8
+
+# 中程度の作業（15-60秒）
+tmux send-keys -t 0 'git add .' Enter && sleep 20
+tmux send-keys -t 0 'npm install' Enter && sleep 45
+tmux send-keys -t 0 'pip install -r requirements.txt' Enter && sleep 30
+
+# 重い作業（60秒以上）
+tmux send-keys -t 0 'npm run build' Enter && sleep 120
+tmux send-keys -t 0 'cargo build --release' Enter && sleep 180
+tmux send-keys -t 0 'docker build .' Enter && sleep 300
+```
+
+### 待機後の状況確認
+
+```bash
+# コマンド送信 → 待機 → 状況確認
+tmux send-keys -t 0 'git status' Enter && \
+sleep 30 && \
+tmux capture-pane -t 0 -p | tail -20
+
+# 複数ステップの作業
+tmux send-keys -t 0 'cd /project' Enter && sleep 5 && \
+tmux send-keys -t 0 'npm install' Enter && sleep 60 && \
+tmux capture-pane -t 0 -p | tail -30
+```
+
+### エラーハンドリング付きの自動待機
+
+```bash
+# エラーが発生した場合の短縮待機
+tmux send-keys -t 0 'npm install' Enter && \
+sleep 30 && \
+tmux capture-pane -t 0 -p | grep -q "error" && \
+echo "エラー検出、追加待機" && sleep 15 || \
+echo "正常完了"
+```
+
+### 監督者向けの効率的な自動待機パターン
+
+```bash
+# 基本的な許可 + 自動待機
+tmux send-keys -t 0 Enter && sleep 30
+
+# 自動許可 + 自動待機
+tmux send-keys -t 0 Down Enter && sleep 30
+
+# 拒否 + 短縮待機（作業者が指示を読む時間）
+tmux send-keys -t 0 Down Down Enter && sleep 10
+```
+
+### 実際の運用例
+
+```bash
+# 1. 作業者の状況確認
+tmux capture-pane -t 0 -p | tail -30
+
+# 2. コマンド許可 + 自動待機
+tmux send-keys -t 0 Enter && sleep 30
+
+# 3. 待機後の状況確認
+tmux capture-pane -t 0 -p | tail -30
+
+# 4. 必要に応じて追加の許可
+tmux send-keys -t 0 Enter && sleep 20
+```
+
+### ワンライナーでの自動待機
+
+```bash
+# 基本的なパターン
+tmux send-keys -t 0 'コマンド' Enter && sleep 30
+
+# 複数コマンドの連続実行
+tmux send-keys -t 0 'コマンド1' Enter && sleep 20 && \
+tmux send-keys -t 0 'コマンド2' Enter && sleep 30
+
+# 状況確認付き
+tmux send-keys -t 0 'コマンド' Enter && sleep 30 && \
+tmux capture-pane -t 0 -p | tail -20
+```
+
 ## 補足情報
 
 ### ペイン一覧確認
