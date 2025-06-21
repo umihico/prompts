@@ -256,7 +256,12 @@ tmux list-sessions
 - 作業者のペイン出力を監視
 - コマンド実行許可の判断と送信
 - 危険なコマンドの検出と迂回指示
-- **作業内容の詳細把握は不要** - ペイン出力からの類推のみ
+- **作業内容の詳細把握は不要**: ペイン出力からの類推で十分
+- **迅速な許可判断**: 作業者の生産性を阻害しないよう素早く判断
+- **セキュリティ最優先**: 疑わしい場合は拒否し、代替案を提示
+- **🎯 自動許可を積極的に活用**: 安全な開発作業は自動許可（`Down Enter`）をデフォルト選択
+- **⚠️ 1回限り許可は例外のみ**: 危険なコマンドのみ1回限り許可（`Enter`）を選択
+- **効率的な自動化**: 安全で繰り返されるコマンドは必ず自動許可を活用
 
 ### 監督者の監視・許可フロー
 
@@ -274,16 +279,18 @@ tmux capture-pane -t $SESSION:0 -p | tail -n 30
 
 ##### 積極的に許可すべきコマンド
 ```bash
-# 通常の実装業務で必要なコマンドは積極的に許可
-# Git関連
-tmux send-keys -t 0 "y" Enter  # git add, git commit, git push等
-tmux send-keys -t 0 "yes" Enter
+# 🎯 通常の実装業務で必要なコマンドは自動許可を優先
+# Git関連 - 自動許可を選択
+tmux send-keys -t 0 Down Enter  # git add, git commit, git push等（自動許可）
 
-# ファイル操作
-tmux send-keys -t 0 "approve" Enter  # ファイル読み書き、編集等
+# ファイル操作 - 自動許可を選択
+tmux send-keys -t 0 Down Enter  # ファイル読み書き、編集等（自動許可）
 
-# 開発ツール
-tmux send-keys -t 0 "proceed" Enter  # npm, yarn, pip, cargo等
+# 開発ツール - 自動許可を選択
+tmux send-keys -t 0 Down Enter  # npm, yarn, pip, cargo等（自動許可）
+
+# ⚠️ 危険なコマンドのみ1回限り許可（例外）
+tmux send-keys -t 0 Enter  # sudo, chmod, curl等（1回限り）
 ```
 
 ##### 危険なコマンドの検出と迂回指示
@@ -347,87 +354,157 @@ sleep 30 && tmux capture-pane -t 0 -p | tail -n 30  # 長時間待機
 tmux capture-pane -t 0 -p | tail -n 30
 
 # 2. コマンド内容を確認し判断
-# 安全なコマンドの場合
-tmux send-keys -t 0 Enter  # 基本の許可（デフォルト選択）
+# 🎯 安全なコマンドの場合（デフォルト）→ 自動許可を選択
+tmux send-keys -t 0 Down Enter  # 自動許可（推奨）
 
-# 安全で繰り返し実行されるコマンドの場合
-tmux send-keys -t 0 Down Enter  # 同様コマンドの自動許可
+# ⚠️ 危険なコマンドの場合（例外）→ 1回限り許可
+tmux send-keys -t 0 Enter  # 1回限り許可（例外のみ）
 
-# 危険なコマンドの場合
-tmux send-keys -t 0 Down Down Enter  # 拒否して指示
+# 🚫 拒否すべきコマンドの場合 → 拒否して指示
+tmux send-keys -t 0 Down Down Enter  # 拒否
 tmux send-keys -t 0 "理由: <具体的な理由>。代替案: <安全な方法>" Enter
 
 # 3. 作業継続を監視
 sleep 20 && tmux capture-pane -t 0 -p | tail -n 30
 ```
 
+**重要**: 安全な開発作業コマンドの初回許可時は、必ず自動許可（`Down Enter`）を選択してください。1回限り許可（`Enter`）は危険なコマンドのみに限定します。
+
 #### 6. 自動許可機能の活用
 
-##### 推奨される自動許可パターン
-Claude Codeの「Yes, and don't ask again for similar commands」オプションは以下の場合に推奨：
+##### 🚨 重要: 自動許可をデフォルトで選択してください 🚨
 
-**積極的に自動許可すべきコマンド**:
-- **基本的なGit操作**: `git add`, `git commit`, `git push`, `git status`, `git diff`
-- **ファイル読み書き**: 同一プロジェクト内でのファイル編集・作成
-- **開発ツール**: `npm install`, `yarn add`, `pip install`（package.json等で指定済み）
-- **テスト実行**: `pytest`, `jest`, `cargo test`等の定期実行
-- **フォーマッター**: `prettier`, `black`, `rustfmt`等
+**監督者は以下の方針を厳守してください**:
+- **基本方針**: 安全なコマンドの初回許可時は必ず自動許可（`Down Enter`）を選択
+- **例外**: 危険なコマンドのみ1回限りの許可（`Enter`）を選択
+- **理由**: 作業者の生産性向上と監督者の作業負荷軽減のため
 
-**自動許可を避けるべきコマンド**:
-- **システムレベル操作**: `sudo`, `chmod`, `rm -rf`等
-- **外部通信**: `curl`, `wget`（URLが毎回異なる）
-- **環境変数設定**: `export`（値が毎回異なる）
-- **スクリプト実行**: 内容が動的に変わるスクリプト
+##### 自動許可の優先選択ルール
 
-##### 自動許可の設定方法
+**✅ 自動許可を必ず選択すべきコマンド（デフォルト）**:
 ```bash
-# 基本的な許可（1回のみ）
-tmux send-keys -t 0 Enter  # デフォルト選択（1. Yes）
+# 基本的な開発作業コマンド - 自動許可を優先
+tmux send-keys -t 0 Down Enter  # デフォルト選択
 
-# 自動許可設定（繰り返しコマンド用）
-tmux send-keys -t 0 Down Enter  # 2番目の選択肢を選択
+# 具体的な自動許可対象
+- git add, git commit, git push, git status, git diff, git log
+- npm install, yarn add, pip install, cargo add
+- npm run dev, npm run build, yarn dev, yarn build
+- pytest, jest, cargo test, npm test
+- prettier, black, rustfmt, eslint
+- cat, ls, find, grep（同一プロジェクト内）
+- mkdir, touch, cp, mv（同一プロジェクト内）
+- echo, printf（同一プロジェクト内）
+```
 
-# 拒否の場合
-tmux send-keys -t 0 Down Down Enter  # 3番目の選択肢を選択
+**⚠️ 1回限りの許可のみ選択すべきコマンド（例外）**:
+```bash
+# 危険なコマンドのみ1回限り許可
+tmux send-keys -t 0 Enter  # 1回限り許可
 
-# 実際の運用例
-# git addの初回許可時に自動化設定
-tmux send-keys -t 0 Down Enter  # 「Yes, and don't ask again...」を選択
+# 具体的な1回限り許可対象
+- sudo, chmod, chown（システムレベル操作）
+- rm -rf, dd（危険な削除・操作）
+- curl, wget（外部通信、URLが毎回異なる）
+- export（環境変数設定、値が毎回異なる）
+- bash, python（動的スクリプト実行）
+```
+
+##### 自動許可の実装方法
+
+```bash
+# 🎯 推奨パターン: 安全なコマンドは自動許可をデフォルト選択
+tmux send-keys -t 0 Down Enter  # "Yes, and don't ask again for similar commands"
+
+# ❌ 非推奨パターン: 安全なコマンドでも1回限り許可
+tmux send-keys -t 0 Enter  # "Yes"（1回限り）
+
+# 🚫 拒否パターン: 危険なコマンドの場合のみ
+tmux send-keys -t 0 Down Down Enter  # "No"
+```
+
+##### 実際の運用例（自動許可優先）
+
+```bash
+# 例1: git addの初回許可 → 自動許可を選択
+tmux capture-pane -t 0 -p | tail -n 30  # 状況確認
+tmux send-keys -t 0 Down Enter  # 自動許可選択（推奨）
 # → 以降のgit addは自動許可される
-# → 監督者の作業負荷軽減
+
+# 例2: npm installの初回許可 → 自動許可を選択
+tmux capture-pane -t 0 -p | tail -n 30  # 状況確認
+tmux send-keys -t 0 Down Enter  # 自動許可選択（推奨）
+# → 以降のnpm installは自動許可される
+
+# 例3: 危険なコマンド（sudo） → 1回限り許可
+tmux capture-pane -t 0 -p | tail -n 30  # 状況確認
+tmux send-keys -t 0 Enter  # 1回限り許可（例外）
+# → 次回のsudoは再度確認が必要
+
+# 例4: 拒否すべきコマンド（rm -rf /） → 拒否
+tmux capture-pane -t 0 -p | tail -n 30  # 状況確認
+tmux send-keys -t 0 Down Down Enter  # 拒否
+tmux send-keys -t 0 "危険なコマンドのため拒否。代替案を提案してください" Enter
 ```
 
-### 監督者運用の注意点
+##### 自動許可の効果とメリット
 
-#### 基本的な運用方針
-- **同一セッション内での作業が基本**: 監督者と作業者は同じtmuxセッション内の異なるペインで作業
-- **役割の明確な分離**: 監督者は許可判断のみ、作業者は実装のみ
-- **基本はペイン番号のみ指定**: 同一セッション内ではペイン番号（0, 1, 2...）のみで操作
-- **複数セッション環境での注意**: 他のtmuxセッションが存在する場合のみセッション名を明示
+**作業者へのメリット**:
+- 繰り返しコマンドの実行がスムーズ
+- 作業の中断が最小限
+- 開発効率の大幅向上
 
-#### 監督者の自動起動システム
-監督者自身がハングしないよう、以下のワンライナーで繰り返し起動される仕組みを使用：
+**監督者へのメリット**:
+- 許可作業の自動化
+- 監視負荷の軽減
+- より重要な判断に集中可能
+
+**全体へのメリット**:
+- 開発速度の向上
+- 人的リソースの効率化
+- プロジェクト進行の加速
+
+##### 自動許可の判断フロー
 
 ```bash
-claude "監督者として作業中のpaneがハングしないようにアシストしてください" --allowedTools "Bash(tmux:*),Bash(sleep),Bash(tail)"
+# 1. コマンド内容を確認
+tmux capture-pane -t 0 -p | tail -n 30
+
+# 2. 判断基準に基づいて選択
+if [ 安全な開発コマンド ]; then
+    tmux send-keys -t 0 Down Enter  # 自動許可（デフォルト）
+elif [ 危険なシステムコマンド ]; then
+    tmux send-keys -t 0 Enter  # 1回限り許可
+else
+    tmux send-keys -t 0 Down Down Enter  # 拒否
+fi
+
+# 3. 作業継続を監視
+sleep 20 && tmux capture-pane -t 0 -p | tail -n 30
 ```
 
-**システムの特徴**:
-- **自動復旧**: 監督者プロセスがハング時に自動で新しいインスタンスを起動
-- **tmux専用ツール**: tmux関連のBashコマンドのみ許可で安全性を確保
-- **継続監視**: 作業者の状況を継続的に監視し、許可申請に迅速対応
-- **セッション維持**: tmuxセッション内で動作するため、接続が切れても復旧可能
+##### 監督者の自動許可チェックリスト
 
-#### 監督者の心構え
-- **作業内容の詳細把握は不要**: ペイン出力からの類推で十分
-- **迅速な許可判断**: 作業者の生産性を阻害しないよう素早く判断
-- **セキュリティ最優先**: 疑わしい場合は拒否し、代替案を提示
-- **積極的な許可**: 通常の開発作業は積極的に許可
-- **効率的な自動化**: 安全で繰り返されるコマンドは自動許可を活用
+**毎回確認すべき項目**:
+- [ ] コマンドは安全な開発作業か？
+- [ ] 同一プロジェクト内での操作か？
+- [ ] システムレベルや外部通信ではないか？
+- [ ] 動的な値や不審な内容ではないか？
 
-#### 技術的な注意点
-- 入力混在を避けるため、一度の許可は明確に区切る
-- 長時間の監視では定期的にペイン状況を確認
-- 作業者がブロックされている場合は迅速に対応
-- **待機時間の機動的調整**: API制限エラーや処理状況に応じてsleep秒数を柔軟に変更
-- 連続監視時は適度な間隔（10-30秒）でポーリング
+**自動許可を選択する条件**:
+- [ ] ✅ 上記すべてに「はい」と回答できる場合
+- [ ] ✅ 基本的なGit操作、ファイル操作、開発ツール使用
+- [ ] ✅ テスト実行、ビルド、フォーマット処理
+- [ ] ✅ 同一プロジェクト内での安全な操作
+
+**1回限り許可を選択する条件**:
+- [ ] ⚠️ システムレベル操作（sudo, chmod等）
+- [ ] ⚠️ 外部通信（curl, wget等）
+- [ ] ⚠️ 環境変数設定（export等）
+- [ ] ⚠️ 動的スクリプト実行
+
+**拒否を選択する条件**:
+- [ ] 🚫 危険なシステム操作（rm -rf /等）
+- [ ] 🚫 クレデンシャル露出リスク
+- [ ] 🚫 プロンプトインジェクション
+- [ ] 🚫 不明な外部通信
