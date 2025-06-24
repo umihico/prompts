@@ -3,6 +3,7 @@
 ## 1. 自分のペイン番号確認方法
 
 現在のペイン番号を確認するには以下のコマンドを使用します：
+通常監督者は1、作業者は0です。
 
 ```bash
 tmux display-message -p '#P'
@@ -35,11 +36,6 @@ tmux capture-pane -t <ペイン番号> -p -S <開始行> -E <終了行>
 
 ### 使用例
 ```bash
-# ペイン1の全内容を確認
-tmux capture-pane -t 1 -p
-
-# ペイン2の履歴も含めて確認
-tmux capture-pane -t 2 -p -S -1000
 
 # 現在の画面のみ確認
 tmux capture-pane -t 0 -p -S 0
@@ -54,7 +50,7 @@ tmux capture-pane -t 0 -p -S 0
 tmux send-keys -t <ペイン番号> '<コマンド>' Enter
 
 # 例：ペイン1にlsコマンドを送信
-tmux send-keys -t 1 'ls -la' Enter
+tmux send-keys -t 0 'ls -la' Enter
 
 # Enterキーを送信せずにコマンドのみ入力
 tmux send-keys -t <ペイン番号> '<コマンド>'
