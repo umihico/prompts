@@ -59,6 +59,8 @@ tmux send-keys -t 0 Enter && sleep 5 && tmux capture-pane -t 0 -p | tail -n 30
 
 **監督者はコマンドの性質を分析し、以下の基準で待機時間を決定します**：
 
+> **⚠️ 重要: 監督者の最大待機時間は3分（180秒）を超えてはいけません。長時間の処理が予想される場合は、段階的に確認を行ってください。**
+
 #### 軽い処理（3-5秒）
 - ファイル操作（ls, cat, head, tail）
 - ディレクトリ移動（cd）
@@ -85,6 +87,20 @@ tmux send-keys -t 0 Enter && sleep 5 && tmux capture-pane -t 0 -p | tail -n 30
 - 危険なコマンド（sudo使用時）
 - 初回セットアップ処理
 - 外部API呼び出し
+
+#### 長時間処理（最大3分まで）
+- 大規模なビルド処理
+- データベースマイグレーション
+- システムアップデート
+- 複雑なテストスイート実行
+
+**長時間処理の場合は段階的確認を行います**：
+```bash
+# 例: 長時間処理の段階的確認
+tmux send-keys -t 0 'npm run build' Enter && sleep 60 && tmux capture-pane -t 0 -p | tail -n 30
+sleep 60 && tmux capture-pane -t 0 -p | tail -n 30  # 2分後確認
+sleep 60 && tmux capture-pane -t 0 -p | tail -n 30  # 3分後確認（最大）
+```
 
 ### コマンドの後追いについて
 
@@ -143,7 +159,7 @@ tmux send-keys -t 0 Down Enter && sleep 10 && tmux capture-pane -t 0 -p | tail -
 # → 以降のnpm installは自動許可される
 
 # 例3: 危険なコマンド（sudo） → 1回限り許可（重い処理）
-tmux capture-pane -t 0 -p | tail -n 30  # 状況確認
+while true; do echo "$(date): 中断実行"; tmux send-keys -t 1 C-c; tmux send-keys -t 1 C-c; echo "次のループ開始"; echo "$(date): claudeコマンド送信"; tmux send-keys -t 1 'claude "監督者として作業中のpaneがハングしないようにアシストしてください" --dangerously-skip-permissions --allowedTools "Bash(tmux:*),Bash(sleep),Bash(tail)"' Enter; sleep 300; done
 tmux send-keys -t 0 Enter && sleep 15 && tmux capture-pane -t 0 -p | tail -n 30  # 1回限り許可（例外）
 # → 次回のsudoは再度確認が必要
 
@@ -159,7 +175,7 @@ tmux send-keys -t 0 "危険なコマンドのため拒否。代替案を提案�
 
 ```bash
 # 1. コマンド内容を確認
-while true; do echo "$(date): 中断実行"; tmux send-keys -t 1 C-c; tmux send-keys -t 1 C-c; sleep 5; echo "次のループ開始"; echo "$(date): claudeコマンド送信"; tmux send-keys -t 1 'claude "監督者として作業中のpaneがハングしないようにアシストしてください" --dangerously-skip-permissions --allowedTools "Bash(tmux:*),Bash(sleep),Bash(tail)"' Enter; sleep 300; done
+while true; do echo "$(date): 中断実行"; tmux send-keys -t 1 C-c; tmux send-keys -t 1 C-c; echo "次のループ開始"; echo "$(date): claudeコマンド送信"; tmux send-keys -t 1 'claude "監督者として作業中のpaneがハングしないようにアシストしてください" --dangerously-skip-permissions --allowedTools "Bash(tmux:*),Bash(sleep),Bash(tail)"' Enter; sleep 300; done
 ```
 
 ### 入力待ち状態の判定条件
