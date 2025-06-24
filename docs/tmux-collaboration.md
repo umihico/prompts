@@ -1,109 +1,49 @@
 # tmux連携コマンドガイド
 
-## 0. ペインの命名と参照方法
+> **注意: ペイン番号0を使用してworkerペインを参照してください。**
 
-ペイン番号の特定問題を解決するため、作業開始時にペインに名前を付けて、名前で参照できるようにします。
+## 0. ペインの参照方法
 
-### ペインの命名方法
+ペインは番号0で参照してください。
 
-```bash
-# 現在のペインに名前を付ける
-tmux select-pane -T "worker"    # 作業者のペインを"worker"と命名
-
-# 特定のペイン番号に名前を付ける
-tmux select-pane -t 0 -T "worker"     # ペイン0を"worker"と命名
-```
-
-### 命名されたペインの参照方法
+### ペインの参照例
 
 ```bash
-# 名前でペインを参照
-tmux capture-pane -t "worker" -p      # 作業者ペインの内容確認
-tmux send-keys -t "worker" 'ls' Enter # 作業者ペインにコマンド送信
-
-# 監督者ペインの参照
-tmux capture-pane -t "supervisor" -p  # 監督者ペインの内容確認
+# 番号でペインを参照
+# 作業者ペインの内容確認
+tmux capture-pane -t 0 -p
 ```
 
-### 推奨セットアップ手順
-
-```bash
-# 1. ペインで実行（ペイン0を想定）
-tmux select-pane -t 0 -T "worker"
-```
-
-## 1. 自分のペイン番号確認方法
-
-現在のペイン番号を確認するには以下のコマンドを使用します：
-通常監督者は1、作業者は0です。
-
-```bash
-tmux display-message -p '#P'
-```
-
-### オプション説明
-- `-p`: メッセージを標準出力に出力
-- `#P`: ペイン番号を表示するフォーマット
-
-### ペイン名の確認方法
-
-```bash
-# 現在のペイン名を確認
-tmux display-message -p '#{pane_title}'
-
-# 全ペインの番号と名前を確認
-tmux list-panes -F "#{pane_index}: #{pane_title}"
-```
-
-## 2. 他ペイン内容確認方法
+## 1. 他ペイン内容確認方法
 
 他のペインの画面内容を確認するには `capture-pane` コマンドを使用します：
 
 ```bash
-# 基本的な使用方法（番号指定）
-tmux capture-pane -t <ペイン番号> -p
-
-# 名前指定での使用方法（推奨）
-tmux capture-pane -t "worker" -p
-
-# 例：作業者ペインの内容を確認
-tmux capture-pane -t "worker" -p
-
+# 番号指定での使用方法（推奨）
+tmux capture-pane -t 0 -p
 # より詳細なオプション
-tmux capture-pane -t "worker" -p -S <開始行> -E <終了行>
-
+tmux capture-pane -t 0 -p -S <開始行> -E <終了行>
 # 現在の画面のみ確認
-tmux capture-pane -t "worker" -p -S 0
-
+tmux capture-pane -t 0 -p -S 0
 # 最後の30行を確認（監視用）
-tmux capture-pane -t "worker" -p | tail -n 30
+tmux capture-pane -t 0 -p | tail -n 30
 ```
 
-## 3. 他ペインへのコマンド送信方法
+## 2. 他ペインへのコマンド送信方法
 
 他のペインにコマンドを送信するには `send-keys` コマンドを使用します：
 
-### 使用例
 ```bash
 # 作業者ペインにgit statusを実行
-tmux send-keys -t "worker" 'git status' Enter
-
-# 監督者ペインにテキストのみ入力（実行しない）
-tmux send-keys -t "supervisor" 'echo "Hello World"'
-
+tmux send-keys -t 0 'git status' Enter
+# テキストのみ入力（実行しない）
+tmux send-keys -t 0 'echo "Hello World"'
 # 特殊キーの送信
-tmux send-keys -t "worker" C-c  # Ctrl+Cを送信
-tmux send-keys -t "worker" C-l  # Ctrl+Lを送信（画面クリア）
+tmux send-keys -t 0 C-c  # Ctrl+Cを送信
+tmux send-keys -t 0 C-l  # Ctrl+Lを送信（画面クリア）
 ```
 
-### 便利な組み合わせ
-```bash
-# 他ペインの状況確認後、コマンド送信
-tmux capture-pane -t "worker" -p | tail -5  # 最後の5行を確認
-tmux send-keys -t "worker" 'cd /path/to/dir' Enter  # ディレクトリ移動
-```
-
-## 4. コマンド送信後の機動的待機時間
+## 3. コマンド送信後の機動的待機時間
 
 コマンドを送信した直後は作業者が作業を進めるため、**コマンドの性質に応じて機動的に待機時間を調整**します。
 各待機時間の後に必ず`capture-pane`で状況確認を行います。
@@ -112,10 +52,7 @@ tmux send-keys -t "worker" 'cd /path/to/dir' Enter  # ディレクトリ移動
 
 ```bash
 # 基本的な許可（軽い処理）
-tmux send-keys -t "worker" Enter && sleep 5 && tmux capture-pane -t "worker" -p | tail -n 30
-
-# 自動許可（軽い処理）
-tmux send-keys -t "worker" Down Enter && sleep 5 && tmux capture-pane -t "worker" -p | tail -n 30
+tmux send-keys -t 0 Enter && sleep 5 && tmux capture-pane -t 0 -p | tail -n 30
 ```
 
 ### 待機時間の機動的調整基準
@@ -155,38 +92,39 @@ tmux send-keys -t "worker" Down Enter && sleep 5 && tmux capture-pane -t "worker
 - 作業者がコマンドを実行すると、監督者のペインに許可確認が表示される
 - 監督者はコマンド内容を確認し、適切な許可判断を行う
 - 許可後は機動的な待機時間を設定し、作業者の次の行動を監視する
+- **入力待ちでないときはsleepしてください。選択可能な入力待ち状態の時のみsend-keysを実行します。それ以外の入力待ちの場合は、監督者の作業を完了として、終了してください。**
 
 ```bash
 # 監督者の基本的な後追いフロー
 # 1. 作業者の状況確認
-tmux capture-pane -t "worker" -p | tail -n 30
+tmux capture-pane -t 0 -p | tail -n 30
 
 # 2. コマンド許可（機動的待機時間）
-tmux send-keys -t "worker" Down Enter && sleep 5 && tmux capture-pane -t "worker" -p | tail -n 30
+tmux send-keys -t 0 Down Enter && sleep 5 && tmux capture-pane -t 0 -p | tail -n 30
 
 # 3. 必要に応じて追加確認
-sleep 3 && tmux capture-pane -t "worker" -p | tail -n 30
+sleep 3 && tmux capture-pane -t 0 -p | tail -n 30
 ```
 
 ### 実際の許可フロー例
 
 ```bash
 # 1. 作業者の状況確認
-tmux capture-pane -t "worker" -p | tail -n 30
+tmux capture-pane -t 0 -p | tail -n 30
 
 # 2. コマンド内容を確認し判断
 # 🎯 安全なコマンドの場合（デフォルト）→ 自動許可を選択
-tmux send-keys -t "worker" Down Enter && sleep 5 && tmux capture-pane -t "worker" -p | tail -n 30  # 自動許可（推奨）
+tmux send-keys -t 0 Down Enter && sleep 5 && tmux capture-pane -t 0 -p | tail -n 30  # 自動許可（推奨）
 
 # ⚠️ 危険なコマンドの場合（例外）→ 1回限り許可
-tmux send-keys -t "worker" Enter && sleep 15 && tmux capture-pane -t "worker" -p | tail -n 30  # 1回限り許可（例外のみ）
+tmux send-keys -t 0 Enter && sleep 15 && tmux capture-pane -t 0 -p | tail -n 30  # 1回限り許可（例外のみ）
 
 # 🚫 拒否すべきコマンドの場合 → 拒否して指示
-tmux send-keys -t "worker" Down Down Enter && sleep 3 && tmux capture-pane -t "worker" -p | tail -n 30  # 拒否
-tmux send-keys -t "worker" "理由: <具体的な理由>。代替案: <安全な方法>" Enter && sleep 5 && tmux capture-pane -t "worker" -p | tail -n 30
+tmux send-keys -t 0 Down Down Enter && sleep 3 && tmux capture-pane -t 0 -p | tail -n 30  # 拒否
+tmux send-keys -t 0 "理由: <具体的な理由>。代替案: <安全な方法>" Enter && sleep 5 && tmux capture-pane -t 0 -p | tail -n 30
 
 # 3. 作業継続を監視
-sleep 8 && tmux capture-pane -t "worker" -p | tail -n 30
+sleep 8 && tmux capture-pane -t 0 -p | tail -n 30
 ```
 
 **重要**: 安全な開発作業コマンドの初回許可時は、必ず自動許可（`Down Enter`）を選択してください。1回限り許可（`Enter`）は使い方によっては危険になりえるコマンドのみに限定します。
@@ -195,33 +133,33 @@ sleep 8 && tmux capture-pane -t "worker" -p | tail -n 30
 
 ```bash
 # 例1: git addの初回許可 → 自動許可を選択（軽い処理）
-tmux capture-pane -t "worker" -p | tail -n 30  # 状況確認
-tmux send-keys -t "worker" Down Enter && sleep 5 && tmux capture-pane -t "worker" -p | tail -n 30  # 自動許可選択（推奨）
+tmux capture-pane -t 0 -p | tail -n 30  # 状況確認
+tmux send-keys -t 0 Down Enter && sleep 5 && tmux capture-pane -t 0 -p | tail -n 30  # 自動許可選択（推奨）
 # → 以降のgit addは自動許可される
 
 # 例2: npm installの初回許可 → 自動許可を選択（中程度の処理）
-tmux capture-pane -t "worker" -p | tail -n 30  # 状況確認
-tmux send-keys -t "worker" Down Enter && sleep 10 && tmux capture-pane -t "worker" -p | tail -n 30  # 自動許可選択（推奨）
+tmux capture-pane -t 0 -p | tail -n 30  # 状況確認
+tmux send-keys -t 0 Down Enter && sleep 10 && tmux capture-pane -t 0 -p | tail -n 30  # 自動許可選択（推奨）
 # → 以降のnpm installは自動許可される
 
 # 例3: 危険なコマンド（sudo） → 1回限り許可（重い処理）
-tmux capture-pane -t "worker" -p | tail -n 30  # 状況確認
-tmux send-keys -t "worker" Enter && sleep 15 && tmux capture-pane -t "worker" -p | tail -n 30  # 1回限り許可（例外）
+tmux capture-pane -t 0 -p | tail -n 30  # 状況確認
+tmux send-keys -t 0 Enter && sleep 15 && tmux capture-pane -t 0 -p | tail -n 30  # 1回限り許可（例外）
 # → 次回のsudoは再度確認が必要
 
 # 例4: 拒否すべきコマンド（rm -rf /） → 拒否（軽い処理）
-tmux capture-pane -t "worker" -p | tail -n 30  # 状況確認
-tmux send-keys -t "worker" Down Down Enter && sleep 3 && tmux capture-pane -t "worker" -p | tail -n 30  # 拒否
-tmux send-keys -t "worker" "危険なコマンドのため拒否。代替案を提案してください" Enter && sleep 5 && tmux capture-pane -t "worker" -p | tail -n 30
+tmux capture-pane -t 0 -p | tail -n 30  # 状況確認
+tmux send-keys -t 0 Down Down Enter && sleep 3 && tmux capture-pane -t 0 -p | tail -n 30  # 拒否
+tmux send-keys -t 0 "危険なコマンドのため拒否。代替案を提案してください" Enter && sleep 5 && tmux capture-pane -t 0 -p | tail -n 30
 ```
 
-## 5. メタ監督者機能
+## 4. メタ監督者機能
 
-監督者のペインがハングした場合の自動再起動機能。**入力待ち状態の時のみアクションを実行**します。
+監督者のペインがハングした場合の自動再起動機能
 
 ```bash
 # 1. コマンド内容を確認
-tmux capture-pane -t "worker" -p | tail -n 30
+while true; do echo "$(date): 中断実行"; tmux send-keys -t 1 C-c; tmux send-keys -t 1 C-c; sleep 5; echo "次のループ開始"; echo "$(date): claudeコマンド送信"; tmux send-keys -t 1 'claude "監督者として作業中のpaneがハングしないようにアシストしてください" --dangerously-skip-permissions --allowedTools "Bash(tmux:*),Bash(sleep),Bash(tail)"' Enter; sleep 300; done
 ```
 
 ### 入力待ち状態の判定条件
