@@ -108,19 +108,35 @@ sleep 60 && tmux capture-pane -t 0 -p | tail -n 30  # 3分後確認（最大）
 - 作業者がコマンドを実行すると、監督者のペインに許可確認が表示される
 - 監督者はコマンド内容を確認し、適切な許可判断を行う
 - 許可後は機動的な待機時間を設定し、作業者の次の行動を監視する
-- **入力待ちでないときはsleepしてください。選択可能な入力待ち状態の時のみsend-keysを実行します。それ以外の入力待ちの場合は、監督者の作業を完了として、終了してください。**
 
+### 🔥 重要: 作業継続の可能性がある場合の待機指示
+
+**監督者は以下の場合、必ずsleepで待機し、作業完了として終了してはいけません**：
+
+
+#### 待機すべき状況（作業継続の可能性あり）
+- 作業者がコマンドを実行した直後
+- 作業者がファイルを編集している最中
+- 作業者が思考中や次のコマンドを入力している状態
+- 作業者がエラーを確認している状態
+- 作業者が結果を確認している状態
+
+### 終了すべき唯一の状況
+
+- 自由入力を求められているとき
+
+#### 待機時間の基本ルール
 ```bash
-# 監督者の基本的な後追いフロー
-# 1. 作業者の状況確認
-tmux capture-pane -t 0 -p | tail -n 30
+# 基本的な待機パターン（作業継続の可能性がある場合）
+tmux capture-pane -t 0 -p | tail -n 30  # 状況確認
+sleep 10 && tmux capture-pane -t 0 -p | tail -n 30  # 10秒待機して再確認
+sleep 15 && tmux capture-pane -t 0 -p | tail -n 30  # さらに15秒待機
+```
 
 # 2. コマンド許可（機動的待機時間）
 tmux send-keys -t 0 Down Enter && sleep 5 && tmux capture-pane -t 0 -p | tail -n 30
 
-# 3. 必要に応じて追加確認
-sleep 3 && tmux capture-pane -t 0 -p | tail -n 30
-```
+**それ以外の場合は、必ずsleepで待機し続けてください。**
 
 ### 実際の許可フロー例
 
@@ -141,6 +157,7 @@ tmux send-keys -t 0 "理由: <具体的な理由>。代替案: <安全な方法>
 
 # 3. 作業継続を監視
 sleep 8 && tmux capture-pane -t 0 -p | tail -n 30
+sleep 10 && tmux capture-pane -t 0 -p | tail -n 30  # 追加待機
 ```
 
 **重要**: 安全な開発作業コマンドの初回許可時は、必ず自動許可（`Down Enter`）を選択してください。1回限り許可（`Enter`）は使い方によっては危険になりえるコマンドのみに限定します。
@@ -159,7 +176,7 @@ tmux send-keys -t 0 Down Enter && sleep 10 && tmux capture-pane -t 0 -p | tail -
 # → 以降のnpm installは自動許可される
 
 # 例3: 危険なコマンド（sudo） → 1回限り許可（重い処理）
-while true; do echo "$(date): 中断実行"; tmux send-keys -t 1 C-c; tmux send-keys -t 1 C-c; echo "次のループ開始"; echo "$(date): claudeコマンド送信"; tmux send-keys -t 1 'claude "監督者として作業中のpaneがハングしないようにアシストしてください" --dangerously-skip-permissions --allowedTools "Bash(tmux:*),Bash(sleep),Bash(tail)"' Enter; sleep 300; done
+tmux capture-pane -t 0 -p | tail -n 30  # 状況確認
 tmux send-keys -t 0 Enter && sleep 15 && tmux capture-pane -t 0 -p | tail -n 30  # 1回限り許可（例外）
 # → 次回のsudoは再度確認が必要
 
