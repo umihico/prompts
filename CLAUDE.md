@@ -7,7 +7,7 @@
 
 # タスク完了時の通知
 
-- タスクを完了する際やユーザーにメッセージを返す際は、必ず以下のコマンドを一度だけ実行してください：
+- タスクを完了する際やユーザーに入力を求めて作業を一時停止する際は、必ず以下のコマンドを一度だけ実行してください。subtitleとmessageで状況を伝達してください。
   ```bash
-  terminal-notifier -title "Cloud Code" -subtitle "$(basename $(pwd))" -message "DONE" -sound Pop
+  terminal-notifier -title "$(date +'%H:%M') $(basename $(pwd))" -subtitle "[REPLACE_SUBTITLE]" -message "[REPLACE_MESSAGE]" -sound Pop
   ```
