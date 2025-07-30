@@ -57,6 +57,41 @@ Cursor Rulesは、プロジェクト間で共有可能なAIアシスタントの
 ## 参考
 - [Cursor公式ドキュメント: Rules](https://docs.cursor.com/context/rules#user-rules)
 
+## Claude Code グローバル設定管理
+
+このリポジトリは、Claude Codeのグローバル設定を管理する機能も提供しています。
+
+### 仕組み
+
+`apply.sh` スクリプトを実行することで、以下のファイルをユーザーのグローバルClaude設定ディレクトリ（`~/.claude/`）にコピーできます：
+
+- `CLAUDE.md` → `~/.claude/CLAUDE.md` - Claude Codeのグローバル指示ファイル
+- `docs/pull-request-guide.md` → `~/.claude/docs/pull-request-guide.md` - プルリクエスト作成・マージガイド
+- `docs/dependabot-review.md` → `~/.claude/docs/dependabot-review.md` - Dependabotレビュー自動化手順
+- `docs/commit.md` → `~/.claude/docs/commit.md` - コミット作成ルール
+
+### 使用方法
+
+```bash
+./apply.sh
+```
+
+このコマンドにより、すべてのClaude Codeプロジェクトで一貫した設定とワークフローが適用されます。
+
+### 含まれる機能
+
+- **プルリクエスト管理**: Draftプルリクエストの必須化、マージコミットの推奨
+- **Dependabotレビュー自動化**: 依存関係アップデートPRの詳細調査と分析
+- **コミット標準化**: 明確なコミットメッセージルールと自動実行
+- **タスク完了通知**: 作業完了時の自動通知システム
+
+### 利点
+
+- プロジェクト間での一貫したワークフロー
+- Claude Codeでの作業効率向上
+- チーム全体での開発プロセス標準化
+- 設定の一元管理による保守性向上
+
 ## ライセンス
 
 MIT License 
