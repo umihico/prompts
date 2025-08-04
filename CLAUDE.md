@@ -3,6 +3,7 @@
 - プルリクエストの作成・マージ方法について @docs/pull-request-guide.md
 - 「dependabot対応して」→dependabotが作るプルリクのレビュー自動化について @docs/dependabot-review.md
 - コミット作成について @docs/commit.md
+- プライベトートレポジトリのGithubを参照するときはghコマンドを積極的に使う。
 
 # タスク完了時の通知
 
