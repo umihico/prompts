@@ -1,5 +1,3 @@
-「監督者」としての作業を指示されたら以下の指示ファイルを参照してください。
-
 # Additional Instructions
 
 - プルリクエストの作成・マージ方法について @docs/pull-request-guide.md
