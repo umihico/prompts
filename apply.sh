@@ -7,6 +7,8 @@ mkdir -p ~/.claude/docs
 cp docs/pull-request-guide.md ~/.claude/docs/pull-request-guide.md
 cp docs/dependabot-review.md ~/.claude/docs/dependabot-review.md
 cp docs/commit.md ~/.claude/docs/commit.md
+rm -rf ~/.claude/commands
+cp -r commands ~/.claude/
 
 # Playwright MCPサーバーの設定
 # 一度のみでOK
